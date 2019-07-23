@@ -78,6 +78,8 @@
 extern crate futures;
 extern crate hyper;
 
+use std::collections::HashMap;
+
 use futures::future::FutureResult;
 use hyper::header::CONTENT_LENGTH;
 use hyper::service::Service;
@@ -95,8 +97,13 @@ pub use self::builder::RouterBuilder;
 pub use self::path::Path;
 pub use self::route::Route;
 pub use self::route::RouteBuilder;
+pub use self::route::RouteHelpers;
+pub use self::route::RouteBuilderImpls;
+pub use self::route::RouteWithCaptures;
 
 pub type Handler = fn(Request<Body>) -> Response<Body>;
+pub type Captures = HashMap<String, String>;
+pub type HandlerWithCaptures = fn(Request<Body>, Captures) -> Response<Body>;
 pub type HttpResult<T> = Result<T, StatusCode>;
 
 /// This is the one. The router.
@@ -146,7 +153,35 @@ impl Router {
             .collect()
     }
 
+    // /// Returns vector of `Route`s that match to given path.
+    // pub fn find_matching_routes_with_captures(&self, request_path: &str) -> Vec<&Route> {
+    //     self.routes
+    //         .iter()
+    //         .filter_map(|route| {
+    //             // NOTE: This only returns the left-most match
+    //             route.path.matcher.captures(&request_path).map(|cap| {
+    //                 let captures: Captures = cap.iter().zip(route.path.matcher.capture_names()).filter_map(|(cap, name)| {
+    //                     if cap.is_some() && name.is_some() {
+    //                         Some((name.unwrap().to_owned(),cap.unwrap().as_str().to_owned()))
+    //                     } else {
+    //                         None
+    //                     }
+    //                 }).collect();
+    //             })
+    //         })
+    //         .collect()
+    // }
+
+
     fn find_for_method(&self, routes: &[&Route], method: &Method) -> Option<Handler> {
+        let method = method.clone();
+        routes
+            .iter()
+            .find(|route| route.method == method)
+            .map(|route| route.handler)
+    }
+
+    fn find_for_method_with_captures(&self, routes: &[&RouteWithCaptures], method: &Method) -> Option<HandlerWithCaptures> {
         let method = method.clone();
         routes
             .iter()

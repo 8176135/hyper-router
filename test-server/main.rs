@@ -5,7 +5,7 @@ use hyper::header::{CONTENT_LENGTH, CONTENT_TYPE};
 use hyper::rt::Future;
 use hyper::server::Server;
 use hyper::{Body, Method, Request, Response};
-use hyper_router::{Route, RouterBuilder, RouterService};
+use hyper_router::{Route, RouterBuilder, RouterService, RouteHelpers, RouteBuilderImpls};
 
 fn request_handler(_: Request<Body>) -> Response<Body> {
     let body = "Hello World";
@@ -19,7 +19,7 @@ fn request_handler(_: Request<Body>) -> Response<Body> {
 fn router_service() -> Result<RouterService, std::io::Error> {
     let router = RouterBuilder::new()
         .add(Route::get("/hello").using(request_handler))
-        .add(Route::from(Method::PATCH, "/world").using(request_handler))
+        .add(Route::builder(Method::PATCH, "/world").using(request_handler))
         .build();
 
     Ok(RouterService::new(router))
